@@ -1,137 +1,135 @@
 """
 init_service.py
 
-本模块用于实现 YouTube 视频项目的初始化服务。
+本模块用于实现 YouTube 视频分析项目的初始化流程。
 
-主要职责：
+核心职责：
 - 从给定的 YouTube 视频链接中提取视频 ID；
-- 获取该视频的主语言（即默认字幕语言，如 'en'）；
-- 若无可用主语言，则终止并抛出异常，不创建任何目录；
-- 若存在主语言，则创建项目目录（如 <video_id>/）；
-  并生成 `project.json`，记录视频基本信息及主语言。
+- 获取该视频的 metadata，并保存为 JSON 文件；
+- 判断是否存在自动字幕（automatic captions）；
+- 若无字幕，则中止初始化并清理目录；
+- 若存在字幕，则生成 project.json。
 
-设计原则：
-- 本模块仅处理业务逻辑，不涉及参数解析或用户交互；
-- 错误通过异常抛出，由调用者决定如何提示用户。
-
-示例用法：
-    from ytx.core.service import init_service
-
-    init_service.run("https://www.youtube.com/watch?v=74i7daegNZE", ".") -> success
-    init_service.run("https://www.youtube.com/watch?v=MpfWnVbVn2g", ".") -> error
+本模块仅处理业务逻辑，不涉及 CLI 参数解析或终端交互。
 """
 
 import json
 import re
+import shutil
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
-import requests
+from typing import Dict, Any, Optional
+from yt_dlp import YoutubeDL
+from rich.console import Console
+import logging
+
+console = Console()
+log = logging.getLogger(__name__)
+
+def run(url: str, output_dir: str = "videos", force: bool = False):
+    # Step 1: 提取视频 ID 和项目路径
+    video_id = extract_video_id(url)
+    project_path = Path(output_dir) / video_id
+    log.debug(f"Target project path: {project_path}")
+
+    # Step 2: 若已存在项目目录，判断是否覆盖
+    if project_path.exists() and not force:
+        console.print(f"[yellow]⚠️  Project already initialized at[/] [white]{project_path}[/]")
+        return
+
+    if project_path.exists() and force:
+        shutil.rmtree(project_path)
+        log.info(f"Removed existing project at {project_path}")
+        console.print(f"[cyan]🗑️  Removed existing project at[/] [white]{project_path}[/]")
+
+    # Step 3: 获取 metadata 并保存
+    try:
+        metadata = extract_metadata(url)
+    except PermissionError as e:
+        console.print(f"[red]❌ {e}. Cleaning up.[/]")
+        log.warning("403 Forbidden during metadata fetch.")
+        if project_path.exists():
+            shutil.rmtree(project_path)
+        return
+
+    if not metadata:
+        console.print("[red]❌ Failed to retrieve video metadata.[/]")
+        log.error("yt-dlp failed to extract metadata (not 403).")
+        if project_path.exists():
+            shutil.rmtree(project_path)
+        return
+
+    # Step 4: 检测自动字幕语言
+    lang = detect_original_asr_language(metadata)
+    if not lang:
+        console.print("[red]❌ No original ASR language (auto captions) found. Cleaning up.[/]")
+        log.warning("No *-orig caption language detected.")
+        if project_path.exists():
+            shutil.rmtree(project_path)
+        return
+
+    # Step 5: 保存 metadata 并写入 project.json
+    project_path.mkdir(parents=True, exist_ok=True)
+    metadata_path = project_path / f"{video_id}.meta.json"
+    metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+
+    project_json = {
+        "video_id": video_id,
+        "url": url,
+        "lang": lang,
+        "created_at": timestamp_now(),
+        "assets": {
+            "metadata": metadata_path.name
+        }
+    }
+    write_project_json(project_path, project_json)
+    log.info(f"Project JSON written to {project_path / 'project.json'}")
+
+    # Step 6: 用户反馈
+    console.print(f"[bold green]✅ Project initialized at[/] [white]{project_path}[/]")
+    console.print(f"[bold blue]🌐 Detected primary language:[/] [white]{lang}[/]")
+    console.print(f"[bold yellow]👉 Next: run[/] [white]ytx overview[/] [bold yellow]to analyze and display video info.[/]")
 
 
 def extract_video_id(url: str) -> str:
-    """Extract video ID from YouTube URL."""
-    # Handle different YouTube URL formats
     patterns = [
         r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)',
         r'youtube\.com\/watch\?.*v=([^&\n?#]+)'
     ]
-    
     for pattern in patterns:
         match = re.search(pattern, url)
         if match:
             return match.group(1)
-    
     raise ValueError(f"Could not extract video ID from URL: {url}")
 
 
-def get_video_main_language(video_id: str) -> Optional[str]:
-    """
-    Get the main language of a YouTube video.
-    
-    Args:
-        video_id: YouTube video ID
-        
-    Returns:
-        Main language code (e.g., 'en', 'zh', 'ja') or None if no captions available
-        
-    Raises:
-        ValueError: If video is not accessible or invalid
-    """
-    try:
-        # Get video page to extract caption tracks
-        url = f"https://www.youtube.com/watch?v={video_id}"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        # Extract caption tracks from page
-        content = response.text
-        
-        # Look for caption tracks in the page source
-        # This is a simplified approach - in production you might want to use yt-dlp or similar
-        caption_pattern = r'"captionTracks":\s*\[(.*?)\]'
-        caption_match = re.search(caption_pattern, content, re.DOTALL)
-        
-        if not caption_match:
-            return None
-            
-        caption_data = caption_match.group(1)
-        
-        # Extract language codes from caption tracks
-        lang_pattern = r'"languageCode":\s*"([^"]+)"'
-        languages = re.findall(lang_pattern, caption_data)
-        
-        if not languages:
-            return None
-            
-        # Return the first language (usually the main/default one)
-        return languages[0]
-        
-    except requests.RequestException as e:
-        raise ValueError(f"Failed to access video {video_id}: {e}")
-    except Exception as e:
-        raise ValueError(f"Error processing video {video_id}: {e}")
-
-
-def run(url: str, output_dir: str = ".") -> None:
-    """
-    Initialize a new YouTube project.
-    
-    Args:
-        url: YouTube video URL
-        output_dir: Output directory (default: current directory)
-    
-    Raises:
-        FileExistsError: If project already exists
-        ValueError: If URL is invalid or video has no captions
-    """
-    video_id = extract_video_id(url)
-    project_dir = Path(output_dir) / video_id
-    
-    # Check if project already exists
-    if project_dir.exists():
-        raise FileExistsError(f"Project is already initialized in {project_dir.absolute()}")
-    
-    # Get video main language
-    main_language = get_video_main_language(video_id)
-    
-    if main_language is None:
-        raise ValueError(f"Video {video_id} has no available captions")
-    
-    # Create project directory
-    project_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Create project.json
-    project_data = {
-        "video_id": video_id,
-        "url": url,
-        "main_language": main_language,
-        "status": "initialized"
+def extract_metadata(url: str) -> Optional[Dict[str, Any]]:
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'skip_download': True
     }
-    
-    project_file = project_dir / "project.json"
-    with open(project_file, 'w', encoding='utf-8') as f:
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=False)
+    except Exception as e:
+        if "403" in str(e):
+            raise PermissionError("403 Forbidden: YouTube access was denied.")
+        return None
+
+
+def detect_original_asr_language(metadata: dict) -> Optional[str]:
+    auto_captions = metadata.get("automatic_captions", {})
+    for lang in auto_captions:
+        if lang.endswith("-orig"):
+            return lang.removesuffix("-orig")
+    return None
+
+def write_project_json(project_path: Path, project_data: Dict[str, Any]) -> None:
+    project_json_path = project_path / "project.json"
+    with open(project_json_path, 'w', encoding='utf-8') as f:
         json.dump(project_data, f, indent=2, ensure_ascii=False)
+
+
+def timestamp_now() -> str:
+    return datetime.now().isoformat()

@@ -2,28 +2,32 @@ import logging
 import typer
 from rich.console import Console
 from pathlib import Path
-import ytx.core.service.init as init_service
+import ytx.core.service.init_service as init_service
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)-8s %(asctime)s [%(name)s] %(message)s",
+    datefmt="%H:%M:%S"
+)
+logging.getLogger("ytx.core").setLevel(logging.DEBUG)
 
 console = Console()
 app = typer.Typer()
 
+
+"""
+ytx init -f --prefix=videos https://www.youtube.com/watch?v=74i7daegNZE
+ytx init -f --prefix=videos https://www.youtube.com/watch?v=kwpWhRXSwZY
+ytx init -f --prefix=videos https://www.youtube.com/watch?v=LCEmiRjPEtQ
+ytx init -f --prefix=videos https://www.youtube.com/watch?v=tupRbmVM9Wc
+ytx init -f --prefix=videos https://www.youtube.com/watch?v=MpfWnVbVn2g
+"""
 @app.command()
-def init(youtube_url: str, prefix: str = typer.Option(".", help="输出目录前缀")):
-    """Initialize a new YouTube project."""
-    try:
-        init_service.run(youtube_url, prefix)
-    except FileExistsError as e:
-        console.print(f"[red]error: {e}[/red]")
-        raise typer.Exit(1)
-    except ValueError as e:
-        console.print(f"[red]error: {e}[/red]")
-        raise typer.Exit(1)
+def init(youtube_url: str, prefix: str = typer.Option("videos", help="输出目录前缀"), force: bool = typer.Option(False, "--force", "-f", help="强制重新初始化")):
+    init_service.run(youtube_url, prefix, force)
 
 @app.command()
 def overview():
-    """Show project overview."""
     pass
         
 @app.callback(invoke_without_command=True)

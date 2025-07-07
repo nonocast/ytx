@@ -24,6 +24,7 @@ dependencies = [
   "typer",
   "rich",
   "requests",
+  "yt-dlp",
 ]
 
 [project.optional-dependencies]
