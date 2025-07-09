@@ -28,7 +28,7 @@ def init(youtube_url: str, prefix: str = typer.Option("videos", help="输出目�
 
 @app.command()
 def overview():
-    pass
+    overview_service.run(force)
         
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
