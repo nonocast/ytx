@@ -11,6 +11,7 @@ ytx 是一个用于 YouTube 视频分析的 Python 工具，支持视频元数�
 - 📝 **自动字幕下载**: 下载并处理视频的自动生成字幕
 - 🤖 **LLM 智能分析**: 使用大语言模型分析视频内容，生成摘要和难度评估
 - 📊 **项目概览**: 提供美观的视频信息概览，包括播放量、点赞数、语言难度等
+- 📋 **视频摘要**: 生成视频目录和分段内容分析
 - 📁 **项目初始化**: 为视频分析项目创建标准化的目录结构
 - 🚀 **命令行界面**: 简单易用的 CLI 工具
 - 🎨 **美观输出**: 使用 Rich 库提供彩色终端输出
@@ -59,6 +60,16 @@ ytx overview
 ytx overview --force
 ```
 
+### 生成视频摘要
+
+```bash
+# 生成视频目录和分段内容分析
+ytx summary
+
+# 强制重新生成摘要
+ytx summary --force
+```
+
 ### 概览信息示例
 
 ```
@@ -80,7 +91,8 @@ videos/
     ├── project.json                    # 项目配置文件
     ├── VIDEO_ID.meta.json              # 视频元数据
     ├── VIDEO_ID.en.srt                 # 英语字幕文件
-    └── VIDEO_ID.en.sentences.md        # 处理后的字幕句子文件
+    ├── VIDEO_ID.en.sentences.md        # 处理后的字幕句子文件
+    └── summary.json                    # 视频摘要数据（可选）
 ```
 
 ### project.json 示例
@@ -92,7 +104,9 @@ videos/
   "lang": "en",
   "created_at": "2024-01-01T12:00:00",
   "assets": {
-    "metadata": "74i7daegNZE.meta.json"
+    "metadata": "74i7daegNZE.meta.json",
+    "captions": "74i7daegNZE.en.srt",
+    "sentences": "74i7daegNZE.en.sentences.md"
   }
 }
 ```
@@ -104,6 +118,8 @@ ytx 集成了大语言模型分析功能，可以：
 - **自动生成视频摘要**: 基于字幕内容生成 200-300 字的中文摘要
 - **语言难度评估**: 分析 CEFR 等级、语速（WPM）、语音覆盖率等
 - **内容风格分析**: 评估句法复杂度、语言风格、词汇特点
+- **视频目录生成**: 将视频内容按主题分为 5-10 个主要段落
+- **分段内容分析**: 为每个段落生成详细的内容描述和关键要点
 
 ### 环境配置
 

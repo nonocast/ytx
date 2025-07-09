@@ -96,7 +96,7 @@ def _analyze_content_with_llm(overview: Overview, sentences: str) -> Dict[str, A
 语言：{overview.language.get('name', 'Unknown')}
 
 字幕内容：
-{sentences[:3000]}...
+{sentences}...
 
 请基于以上信息进行分析。"""
 

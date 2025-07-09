@@ -3,13 +3,14 @@ import typer
 from rich.console import Console
 import ytx.core.service.init_service as init_service
 import ytx.core.service.overview_service as overview_service
+import ytx.core.service.summary_service as summary_service
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,
     format="%(levelname)-8s %(asctime)s [%(name)s] %(message)s",
     datefmt="%H:%M:%S"
 )
-logging.getLogger("ytx.core").setLevel(logging.DEBUG)
+logging.getLogger("ytx.core").setLevel(logging.WARNING)
 
 console = Console()
 app = typer.Typer()
@@ -34,7 +35,16 @@ def init(
 def overview(
     force: bool = typer.Option(False, "--force", "-f", help="强制重新分析")
 ):
-    overview_service.run(".", force)
+    overview = overview_service.run(force)
+    if overview:
+        console.print(overview.to_pretty_text())
+    else:
+        console.print("[red]无法生成概览信息[/red]")
+
+@app.command()
+def summary():
+    result = summary_service.run()
+    print(result)
         
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):

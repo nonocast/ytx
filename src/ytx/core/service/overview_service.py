@@ -26,33 +26,33 @@ from ytx.core.llm import overview as llm_overview
 console = Console()
 log = logging.getLogger(__name__)
 
-def run(project_dir: str = ".", force: bool = False):
+def run(force: bool = False):
     if not force:
-        overview = try_load_overview(project_dir)
+        overview = try_load_overview()
         if overview is not None:
             return overview
 
     overview = Overview()
-    update_overview_meta(overview, project_dir)
-    captions_path = srt_utils.download_en_captions(project_dir, force)
+    update_overview_meta(overview)
+    captions_path = srt_utils.download_en_captions(force)
     sentence_path = srt_utils.generate_sentence_md_from_srt(captions_path)
 
     llm_overview.update(overview, sentence_path)
 
     return overview
 
-def try_load_overview(project_dir: str) -> Optional[Overview]:
+def try_load_overview() -> Optional[Overview]:
     return None
 
-def update_overview_meta(overview: Overview, project_dir: str):
+def update_overview_meta(overview: Overview):
     """
     从项目目录中的 project.json 和 meta.json 文件更新概览元数据
     
     Args:
         overview: 要更新的 Overview 对象
-        project_dir: 项目目录路径
     """
     try:
+        project_dir = "."
         # 读取 project.json
         project_path = os.path.join(project_dir, "project.json")
         if not os.path.exists(project_path):
@@ -121,7 +121,6 @@ def update_overview_meta(overview: Overview, project_dir: str):
         overview.summary = "N/A"
         
         # 难度（difficulty）
-        # 只要有一项没有真实数据就用 N/A/0
         difficulty = {
             "cefr": meta_data.get("cefr", "N/A"),
             "voice_coverage": meta_data.get("voice_coverage", 0),
@@ -130,7 +129,6 @@ def update_overview_meta(overview: Overview, project_dir: str):
             "style": meta_data.get("style", "N/A"),
             "vocab": meta_data.get("vocab", "N/A")
         }
-        # 如果 meta_data 没有任何难度相关字段，则全部为 N/A/0
         if not any([meta_data.get("cefr"), meta_data.get("voice_coverage"), meta_data.get("wpm"), meta_data.get("syntax"), meta_data.get("style"), meta_data.get("vocab")]):
             difficulty = {
                 "cefr": "N/A",

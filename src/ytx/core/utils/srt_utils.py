@@ -7,9 +7,25 @@ from yt_dlp import YoutubeDL
 
 log = logging.getLogger(__name__)
 
-def download_en_captions(project_dir: str, force: bool) -> Path:
-    # Step 1: 读取 metadata 获取 video_id, url
-    meta_path = Path(project_dir) / f"{Path(project_dir).name}.meta.json"
+def download_en_captions(force: bool) -> Path:
+    # 优先读取 project.json 获取 meta 文件名
+    from pathlib import Path
+    import json
+    import logging
+    log = logging.getLogger(__name__)
+
+    project_dir = "."
+    project_path = Path(project_dir) / "project.json"
+    if project_path.exists():
+        with project_path.open("r", encoding="utf-8") as f:
+            project_data = json.load(f)
+        meta_filename = project_data.get("assets", {}).get("metadata")
+        if not meta_filename:
+            raise FileNotFoundError(f"project.json 中未找到 assets.metadata 字段: {project_path}")
+        meta_path = Path(project_dir) / meta_filename
+    else:
+        # 兼容老逻辑
+        meta_path = Path(project_dir) / f"{Path(project_dir).name}.meta.json"
     if not meta_path.exists():
         raise FileNotFoundError(f"Metadata not found: {meta_path}")
 
@@ -32,6 +48,7 @@ def download_en_captions(project_dir: str, force: bool) -> Path:
 
     # Step 3: 下载 SRT 自动字幕
     log.info(f"📥 Downloading auto captions for video={video_id}, lang={lang_code}")
+    from yt_dlp import YoutubeDL
     ydl_opts = {
         "skip_download": True,
         "writesubtitles": True,
@@ -45,7 +62,7 @@ def download_en_captions(project_dir: str, force: bool) -> Path:
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-    # Step 4: 重命名为 video-id.en-orig.srt
+    # Step 4: 重命名为 video-id.en.srt
     raw_srt = Path(project_dir) / f"{video_id}.{lang_code}.srt"
     if not raw_srt.exists():
         raise FileNotFoundError(f"Expected subtitle file not found: {raw_srt}")
