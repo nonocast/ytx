@@ -4,6 +4,7 @@ from rich.console import Console
 import ytx.core.service.init_service as init_service
 import ytx.core.service.overview_service as overview_service
 import ytx.core.service.summary_service as summary_service
+import ytx.core.service.download_service as download_service
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -45,6 +46,11 @@ def overview(
 def summary():
     result = summary_service.run()
     print(result)
+
+@app.command()
+def download(force: bool = typer.Option(False, "--force", "-f", help="强制重新下载")):
+    download_service.run(force=force)
+    print("下载完成")
         
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):

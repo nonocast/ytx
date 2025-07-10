@@ -33,11 +33,12 @@ def run(force: bool = False):
             return overview
 
     overview = Overview()
+
     update_overview_meta(overview)
     captions_path = srt_utils.download_en_captions(force)
     sentence_path = srt_utils.generate_sentence_md_from_srt(captions_path)
-
     llm_overview.update(overview, sentence_path)
+    save_overview(overview)
 
     return overview
 
@@ -145,4 +146,19 @@ def update_overview_meta(overview: Overview):
     except Exception as e:
         log.error(f"更新元数据时出错: {e}")
         console.print(f"[red]错误：无法更新视频元数据 - {e}[/red]")
+
+
+def save_overview(overview: Overview):
+    try:
+        overview_data = overview.to_dict()
+        overview_path = "overview.json"
+        
+        with open(overview_path, 'w', encoding='utf-8') as f:
+            json.dump(overview_data, f, ensure_ascii=False, indent=2)
+        
+        log.info(f"成功保存概览数据到: {overview_path}")
+        
+    except Exception as e:
+        log.error(f"保存概览数据时出错: {e}")
+        console.print(f"[red]错误：无法保存概览数据 - {e}[/red]")
 
