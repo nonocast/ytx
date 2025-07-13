@@ -90,7 +90,7 @@
       {% for s in sentences %}
       <tr id="s{{ s.id }}">
         <td>{{ s.id }}</td>
-        <td><a href="#" onclick="playClip('{{ s.time }}')">{{ s.time }}</a></td>
+        <td><a href="javascript:void(0)" onclick="playClip('{{ s.time }}')">{{ s.time }}</a></td>
         <td>{{ s.text }}</td>
       </tr>
       {% endfor %}
