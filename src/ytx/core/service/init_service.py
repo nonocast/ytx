@@ -26,10 +26,10 @@ import logging
 console = Console()
 log = logging.getLogger(__name__)
 
-def run(url: str, output_dir: str = "videos", force: bool = False):
+def run(url: str, project_dir: str = "videos", force: bool = False):
     # Step 1: 提取视频 ID 和项目路径
     video_id = extract_video_id(url)
-    project_path = Path(output_dir) / video_id
+    project_path = Path(project_dir) / video_id
     log.debug(f"Target project path: {project_path}")
 
     # Step 2: 若已存在项目目录，判断是否覆盖
@@ -75,6 +75,7 @@ def run(url: str, output_dir: str = "videos", force: bool = False):
 
     project_json = {
         "video_id": video_id,
+        "title": metadata.get("title", ""),
         "url": url,
         "lang": lang,
         "created_at": timestamp_now(),

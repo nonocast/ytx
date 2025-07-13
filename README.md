@@ -8,11 +8,13 @@ ytx 是一个用于 YouTube 视频分析的 Python 工具，支持视频元数�
 ## 功能特性
 
 - 🎥 **视频元数据提取**: 自动获取 YouTube 视频的详细信息
-- 📝 **自动字幕下载**: 下载并处理视频的自动生成字幕
+- 📝 **自动字幕下载**: 下载并处理视频的自动生成字幕，自动清理 [Music] 等标记
 - 🤖 **LLM 智能分析**: 使用大语言模型分析视频内容，生成摘要和难度评估
 - 📊 **项目概览**: 提供美观的视频信息概览，包括播放量、点赞数、语言难度等
 - 📋 **视频摘要**: 生成视频目录和分段内容分析
 - 📁 **项目初始化**: 为视频分析项目创建标准化的目录结构
+- 🌐 **预览页面**: 生成交互式的 HTML 预览页面，支持句子级别浏览
+- 🎬 **视频下载**: 支持下载高质量视频文件
 - 🚀 **命令行界面**: 简单易用的 CLI 工具
 - 🎨 **美观输出**: 使用 Rich 库提供彩色终端输出
 
@@ -70,6 +72,26 @@ ytx summary
 ytx summary --force
 ```
 
+### 下载视频文件
+
+```bash
+# 下载视频到项目目录
+ytx download
+
+# 强制重新下载
+ytx download --force
+```
+
+### 生成预览页面
+
+```bash
+# 生成交互式预览页面
+ytx preview
+
+# 强制重新生成
+ytx preview --force
+```
+
 ### 概览信息示例
 
 ```
@@ -90,8 +112,10 @@ videos/
 └── VIDEO_ID/
     ├── project.json                    # 项目配置文件
     ├── VIDEO_ID.meta.json              # 视频元数据
+    ├── VIDEO_ID.mp4                    # 下载的视频文件（可选）
     ├── VIDEO_ID.en.srt                 # 英语字幕文件
-    ├── VIDEO_ID.en.sentences.md        # 处理后的字幕句子文件
+    ├── VIDEO_ID.en.sentences.md        # 处理后的字幕句子文件（已清理 [Music] 等标记）
+    ├── preview.html                    # 交互式预览页面
     └── summary.json                    # 视频摘要数据（可选）
 ```
 
@@ -100,6 +124,7 @@ videos/
 ```json
 {
   "video_id": "74i7daegNZE",
+  "title": "My Video Title",
   "url": "https://www.youtube.com/watch?v=74i7daegNZE",
   "lang": "en",
   "created_at": "2024-01-01T12:00:00",
@@ -109,6 +134,25 @@ videos/
     "sentences": "74i7daegNZE.en.sentences.md"
   }
 }
+```
+
+## 字幕处理功能
+
+ytx 提供智能的字幕处理功能：
+
+- **自动清理标记**: 自动移除 `[Music]`、`[Applause]`、`[Laughter]` 等自动生成的字幕标记
+- **句子分割**: 将连续字幕按句末标点智能分割成独立句子
+- **时间戳保留**: 为每个句子保留准确的时间戳信息
+- **格式标准化**: 生成统一的 `.sentences.md` 格式文件
+
+### 字幕文件格式
+
+处理后的字幕文件格式示例：
+
+```
+[1] 00:00:10 → Good morning, guys.
+[2] 00:00:13 → I don't want you to think I've forgotten about the series.
+[3] 00:00:16 → I think I've had the series for almost a year now.
 ```
 
 ## LLM 分析功能

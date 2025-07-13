@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ title }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 2rem;
+      line-height: 1.6;
+      background: #fff;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-family: monospace;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 4px 8px;
+      vertical-align: top;
+    }
+
+    th {
+      border-bottom: 1px solid #ccc;
+      font-weight: bold;
+      background-color: #f5f5f5;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    td:first-child {
+      width: 60px;
+    }
+
+    td:nth-child(2) {
+      width: 100px;
+    }
+  </style>
+  <script>
+  function toSeconds(timeStr) {
+    const [h, m, s] = timeStr.split(':').map(Number);
+    return h * 3600 + m * 60 + s;
+  }
+
+  function playClip(startTimeStr) {
+    const video = document.getElementById('video');
+    const start = toSeconds(startTimeStr);
+    const end = start + 5;  // 播放 5 秒
+
+    video.currentTime = start;
+    video.play();
+
+    const stopAt = () => {
+      if (video.currentTime >= end) {
+        video.pause();
+        video.removeEventListener('timeupdate', stopAt);
+      }
+    };
+
+    video.addEventListener('timeupdate', stopAt);
+  }
+  </script>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <video id="video" width="640" controls>
+    <source src="{{ video_path }}" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Time</th>
+        <th>Sentence</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sentences %}
+      <tr id="s{{ s.id }}">
+        <td>{{ s.id }}</td>
+        <td><a href="#" onclick="playClip('{{ s.time }}')">{{ s.time }}</a></td>
+        <td>{{ s.text }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

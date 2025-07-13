@@ -46,12 +46,6 @@ def try_load_overview() -> Optional[Overview]:
     return None
 
 def update_overview_meta(overview: Overview):
-    """
-    从项目目录中的 project.json 和 meta.json 文件更新概览元数据
-    
-    Args:
-        overview: 要更新的 Overview 对象
-    """
     try:
         project_dir = "."
         # 读取 project.json

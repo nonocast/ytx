@@ -7,14 +7,13 @@ from yt_dlp import YoutubeDL
 
 log = logging.getLogger(__name__)
 
-def download_en_captions(force: bool) -> Path:
+def download_en_captions(project_dir: str = ".", force: bool = False) -> Path:
     # 优先读取 project.json 获取 meta 文件名
     from pathlib import Path
     import json
     import logging
     log = logging.getLogger(__name__)
 
-    project_dir = "."
     project_path = Path(project_dir) / "project.json"
     if project_path.exists():
         with project_path.open("r", encoding="utf-8") as f:
@@ -23,9 +22,6 @@ def download_en_captions(force: bool) -> Path:
         if not meta_filename:
             raise FileNotFoundError(f"project.json 中未找到 assets.metadata 字段: {project_path}")
         meta_path = Path(project_dir) / meta_filename
-    else:
-        # 兼容老逻辑
-        meta_path = Path(project_dir) / f"{Path(project_dir).name}.meta.json"
     if not meta_path.exists():
         raise FileNotFoundError(f"Metadata not found: {meta_path}")
 
@@ -80,6 +76,8 @@ def generate_sentence_md_from_srt(srt_path: Path) -> Path:
     time_marks = []
     for sub in subs:
         clean_text = sub.text.replace('\n', ' ').strip()
+        # 去掉中括号内容，如 [Music], [Applause] 等
+        clean_text = re.sub(r'\[.*?\]', '', clean_text).strip()
         if clean_text:
             if full_text:
                 full_text += " "  # 保证中间有空格

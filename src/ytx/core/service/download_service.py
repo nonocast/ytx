@@ -17,19 +17,19 @@ from yt_dlp import YoutubeDL
 log = logging.getLogger(__name__)
 
 
-def run(force: bool = False):
-    project = get_project()
+def run(project_dir: str = ".", force: bool = False):
+    project = get_project(project_dir)
     url = project['url']
-    download_video(url, force)
-    download_orig_captions(url, force)
-    download_zh_captions(url, force)
-    merge_captions(url, force)
+    download_video(url, project_dir, force)
+    download_orig_captions(url, project_dir, force)
+    download_zh_captions(url, project_dir, force)
+    merge_captions(url, project_dir, force)
 
-def download_video(url: str, force: bool = False):
+def download_video(url: str, project_dir: str = ".", force: bool = False):
     # 获取视频ID
     m = re.search(r"[?&]v=([a-zA-Z0-9_-]{11})", url)
     video_id = m.group(1) if m else 'video'
-    mp4_file = f'{video_id}.mp4'
+    mp4_file = os.path.join(project_dir, f'{video_id}.mp4')
     if os.path.exists(mp4_file):
         log.info(f"⚠️ 视频文件已存在，跳过下载: {mp4_file}")
         return
@@ -52,8 +52,8 @@ def download_video(url: str, force: bool = False):
         log.warning(f"❌ 下载视频时出错: {e}")
 
 
-def get_project() -> Dict[str, Any]:
-    project_path = "project.json"
+def get_project(project_dir: str = ".") -> Dict[str, Any]:
+    project_path = os.path.join(project_dir, "project.json")
     
     if not os.path.exists(project_path):
         raise FileNotFoundError(f"项目配置文件不存在: {project_path}")
@@ -71,11 +71,11 @@ def get_project() -> Dict[str, Any]:
         log.error(f"读取项目配置文件时出错: {e}")
         raise
 
-def download_orig_captions(url: str, force: bool = False):
+def download_orig_captions(url: str, project_dir: str = ".", force: bool = False):
     """下载原始语言字幕"""
     m = re.search(r"[?&]v=([a-zA-Z0-9_-]{11})", url)
     video_id = m.group(1) if m else 'video'
-    orig_srt = f'{video_id}.orig.srt'
+    orig_srt = os.path.join(project_dir, f'{video_id}.orig.srt')
     
     if os.path.exists(orig_srt) and not force:
         log.info(f"⚠️ 原始字幕文件已存在，跳过下载: {orig_srt}")
@@ -87,7 +87,7 @@ def download_orig_captions(url: str, force: bool = False):
             'writesubtitles': True,
             'writeautomaticsub': True,
             'subtitleslangs': ['en-orig', 'us-orig', 'orig'],
-            'outtmpl': f'{video_id}.%(ext)s',
+            'outtmpl': os.path.join(project_dir, f'{video_id}.%(ext)s'),
             'noplaylist': True,
             'postprocessors': [{
                 'key': 'FFmpegSubtitlesConvertor',
@@ -99,7 +99,7 @@ def download_orig_captions(url: str, force: bool = False):
         
         # 检查是否成功下载了 srt 文件
         for lang in ['en-orig', 'us-orig', 'orig']:
-            srt_file = f'{video_id}.{lang}.srt'
+            srt_file = os.path.join(project_dir, f'{video_id}.{lang}.srt')
             if os.path.exists(srt_file):
                 # 重命名为统一的文件名
                 if srt_file != orig_srt:
@@ -114,11 +114,11 @@ def download_orig_captions(url: str, force: bool = False):
         log.warning(f"❌ 下载原始字幕时出错: {e}")
         return None
 
-def download_zh_captions(url: str, force: bool = False):
+def download_zh_captions(url: str, project_dir: str = ".", force: bool = False):
     """下载中文字幕"""
     m = re.search(r"[?&]v=([a-zA-Z0-9_-]{11})", url)
     video_id = m.group(1) if m else 'video'
-    zh_srt = f'{video_id}.zh.srt'
+    zh_srt = os.path.join(project_dir, f'{video_id}.zh.srt')
     
     if os.path.exists(zh_srt) and not force:
         log.info(f"⚠️ 中文字幕文件已存在，跳过下载: {zh_srt}")
@@ -130,7 +130,7 @@ def download_zh_captions(url: str, force: bool = False):
             'writesubtitles': True,
             'writeautomaticsub': True,
             'subtitleslangs': ['zh', 'zh-Hans', 'zh-CN'],
-            'outtmpl': f'{video_id}.%(ext)s',
+            'outtmpl': os.path.join(project_dir, f'{video_id}.%(ext)s'),
             'noplaylist': True,
             'postprocessors': [{
                 'key': 'FFmpegSubtitlesConvertor',
@@ -142,12 +142,12 @@ def download_zh_captions(url: str, force: bool = False):
         
         # 检查是否成功下载了 srt 文件
         for lang in ['zh', 'zh-Hans', 'zh-CN']:
-            srt_file = f'{video_id}.{lang}.srt'
+            srt_file = os.path.join(project_dir, f'{video_id}.{lang}.srt')
             if os.path.exists(srt_file):
                 # 重命名为统一的文件名
                 if srt_file != zh_srt:
                     os.rename(srt_file, zh_srt)
-                log.info(f"✅ 中文字幕已保存为 {zh_srt}")
+                log.info(f"✅ 中文字幕文件已保存为 {zh_srt}")
                 return zh_srt
         
         log.warning("❌ 未找到中文字幕文件")
@@ -157,14 +157,14 @@ def download_zh_captions(url: str, force: bool = False):
         log.warning(f"❌ 下载中文字幕时出错: {e}")
         return None
 
-def merge_captions(url: str, force: bool = False):
+def merge_captions(url: str, project_dir: str = ".", force: bool = False):
     """合并原始和中文字幕，生成双语字幕"""
     m = re.search(r"[?&]v=([a-zA-Z0-9_-]{11})", url)
     video_id = m.group(1) if m else 'video'
     
-    orig_srt = f'{video_id}.orig.srt'
-    zh_srt = f'{video_id}.zh.srt'
-    merged_srt = f'{video_id}.merged.srt'
+    orig_srt = os.path.join(project_dir, f'{video_id}.orig.srt')
+    zh_srt = os.path.join(project_dir, f'{video_id}.zh.srt')
+    merged_srt = os.path.join(project_dir, f'{video_id}.merged.srt')
     
     if os.path.exists(merged_srt) and not force:
         log.info(f"⚠️ 合并字幕文件已存在，跳过合并: {merged_srt}")

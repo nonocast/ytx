@@ -5,6 +5,7 @@ import ytx.core.service.init_service as init_service
 import ytx.core.service.overview_service as overview_service
 import ytx.core.service.summary_service as summary_service
 import ytx.core.service.download_service as download_service
+import ytx.core.service.preview_service as preview_service
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -51,6 +52,10 @@ def summary():
 def download(force: bool = typer.Option(False, "--force", "-f", help="强制重新下载")):
     download_service.run(force=force)
     print("下载完成")
+
+@app.command()
+def preview(force: bool = typer.Option(False, "--force", "-f", help="强制重新生成")):
+    preview_service.run(force)
         
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):

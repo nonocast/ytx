@@ -27,7 +27,8 @@ dependencies = [
   "requests",
   "yt-dlp",
   "openai",
-  "pysrt"
+  "pysrt",
+  "jinja2"
 ]
 
 [project.optional-dependencies]
