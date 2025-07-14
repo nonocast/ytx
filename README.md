@@ -113,8 +113,8 @@ videos/
     ├── project.json                    # 项目配置文件
     ├── VIDEO_ID.meta.json              # 视频元数据
     ├── VIDEO_ID.mp4                    # 下载的视频文件（可选）
-    ├── VIDEO_ID.en.srt                 # 英语字幕文件
-    ├── VIDEO_ID.en.sentences.md        # 处理后的字幕句子文件（已清理 [Music] 等标记）
+    ├── VIDEO_ID.en.json3               # 英语 json3 字幕文件（含详细时间戳）
+    ├── VIDEO_ID.en.json3-sentences.md  # 处理后的字幕句子文件（含起止时间）
     ├── preview.html                    # 交互式预览页面
     └── summary.json                    # 视频摘要数据（可选）
 ```
@@ -142,18 +142,34 @@ ytx 提供智能的字幕处理功能：
 
 - **自动清理标记**: 自动移除 `[Music]`、`[Applause]`、`[Laughter]` 等自动生成的字幕标记
 - **句子分割**: 将连续字幕按句末标点智能分割成独立句子
-- **时间戳保留**: 为每个句子保留准确的时间戳信息
-- **格式标准化**: 生成统一的 `.sentences.md` 格式文件
+- **起止时间戳**: 为每个句子保留准确的起止时间（支持毫秒）
+- **格式标准化**: 生成统一的 `.json3-sentences.md` 文件，便于后续分析和预览
 
 ### 字幕文件格式
 
 处理后的字幕文件格式示例：
 
 ```
-[1] 00:00:10 → Good morning, guys.
-[2] 00:00:13 → I don't want you to think I've forgotten about the series.
-[3] 00:00:16 → I think I've had the series for almost a year now.
+[1] 00:00:10.000000 → 00:00:13.500000 Good morning, guys.
+[2] 00:00:13.500000 → 00:00:16.000000 I don't want you to think I've forgotten about the series.
+[3] 00:00:16.000000 → 00:00:18.000000 I think I've had the series for almost a year now.
 ```
+
+## 预览页面
+
+ytx 会自动生成交互式 HTML 预览页面（`preview.html`），支持：
+
+- 句子级别浏览，展示每句的起止时间
+- 点击起始时间可自动播放该句对应视频片段
+- 支持毫秒级精准跳转
+
+页面示例：
+
+| # | Start         | End           | Sentence                                 |
+|---|---------------|---------------|------------------------------------------|
+| 1 | 00:00:10.000  | 00:00:13.500  | Good morning, guys.                      |
+| 2 | 00:00:13.500  | 00:00:16.000  | I don't want you to think ...            |
+| 3 | 00:00:16.000  | 00:00:18.000  | I think I've had the series ...          |
 
 ## LLM 分析功能
 

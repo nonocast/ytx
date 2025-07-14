@@ -53,10 +53,10 @@
     return h * 3600 + m * 60 + s;
   }
 
-  function playClip(startTimeStr) {
+  function playClip(startTimeStr, endTimeStr) {
     const video = document.getElementById('video');
     const start = toSeconds(startTimeStr);
-    const end = start + 5;  // 播放 5 秒
+    const end = toSeconds(endTimeStr);
 
     video.currentTime = start;
     video.play();
@@ -82,7 +82,8 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>Time</th>
+        <th>Start</th>
+        <th>End</th>
         <th>Sentence</th>
       </tr>
     </thead>
@@ -90,7 +91,8 @@
       {% for s in sentences %}
       <tr id="s{{ s.id }}">
         <td>{{ s.id }}</td>
-        <td><a href="javascript:void(0)" onclick="playClip('{{ s.time }}')">{{ s.time }}</a></td>
+        <td><a href="javascript:void(0)" onclick="playClip('{{ s.start }}', '{{ s.end }}')">{{ s.start }}</a></td>
+        <td><a href="javascript:void(0)" onclick="playClip('{{ s.end }}', '{{ s.end }}')">{{ s.end }}</a></td>
         <td>{{ s.text }}</td>
       </tr>
       {% endfor %}
