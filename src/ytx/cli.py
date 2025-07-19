@@ -37,7 +37,7 @@ def init(
 def overview(
     force: bool = typer.Option(False, "--force", "-f", help="强制重新分析")
 ):
-    overview = overview_service.run(force)
+    overview = overview_service.run(project_dir=".", force=force)
     if overview:
         console.print(overview.to_pretty_text())
     else:
@@ -45,7 +45,7 @@ def overview(
 
 @app.command()
 def summary():
-    result = summary_service.run()
+    result = summary_service.run(project_dir=".")
     print(result)
 
 @app.command()

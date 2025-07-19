@@ -26,7 +26,7 @@ from ytx.core.llm import overview as llm_overview
 console = Console()
 log = logging.getLogger(__name__)
 
-def run(force: bool = False):
+def run(project_dir: str, force: bool = False):
     if not force:
         overview = try_load_overview()
         if overview is not None:
@@ -34,8 +34,8 @@ def run(force: bool = False):
 
     overview = Overview()
 
-    update_overview_meta(overview)
-    captions_path = srt_utils.download_en_captions(force)
+    update_overview_meta(project_dir, overview)
+    captions_path = srt_utils.download_en_captions(project_dir, force)
     sentence_path = srt_utils.generate_sentence_md_from_srt(captions_path)
     llm_overview.update(overview, sentence_path)
     save_overview(overview)
@@ -45,9 +45,8 @@ def run(force: bool = False):
 def try_load_overview() -> Optional[Overview]:
     return None
 
-def update_overview_meta(overview: Overview):
+def update_overview_meta(project_dir: str, overview: Overview):
     try:
-        project_dir = "."
         # 读取 project.json
         project_path = os.path.join(project_dir, "project.json")
         if not os.path.exists(project_path):

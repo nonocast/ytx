@@ -42,6 +42,7 @@ def run(url: str, project_dir: str = "videos", force: bool = False):
         log.info(f"Removed existing project at {project_path}")
         console.print(f"[cyan]🗑️  Removed existing project at[/] [white]{project_path}[/]")
 
+
     # Step 3: 获取 metadata 并保存
     try:
         metadata = extract_metadata(url)
@@ -108,7 +109,10 @@ def extract_metadata(url: str) -> Optional[Dict[str, Any]]:
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'skip_download': True
+        'skip_download': True,
+        'socket_timeout': 10,
+        'retries': 1,
+        'nocheckcertificate': True
     }
     try:
         with YoutubeDL(ydl_opts) as ydl:

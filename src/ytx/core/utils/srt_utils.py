@@ -4,16 +4,11 @@ import re
 import logging
 import json
 from yt_dlp import YoutubeDL
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-def download_en_captions(project_dir: str = ".", force: bool = False) -> Path:
-    # 优先读取 project.json 获取 meta 文件名
-    from pathlib import Path
-    import json
-    import logging
-    log = logging.getLogger(__name__)
-
+def download_en_captions(project_dir: str, force: bool = False) -> Path:
     project_path = Path(project_dir) / "project.json"
     if project_path.exists():
         with project_path.open("r", encoding="utf-8") as f:
@@ -53,6 +48,9 @@ def download_en_captions(project_dir: str = ".", force: bool = False) -> Path:
         "subtitlesformat": "srt",
         "outtmpl": str(Path(project_dir) / f"{video_id}"),
         "quiet": True,
+        "socket_timeout": 10,
+        "retries": 1,
+        "nocheckcertificate": True
     }
 
     with YoutubeDL(ydl_opts) as ydl:

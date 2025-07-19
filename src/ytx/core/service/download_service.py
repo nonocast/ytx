@@ -44,6 +44,9 @@ def download_video(url: str, project_dir: str = ".", force: bool = False):
                 '/best[ext=mp4][vcodec^=avc1]'
             ),
             'noplaylist': True,
+            'socket_timeout': 10,
+            'retries': 1,
+            'nocheckcertificate': True
         }
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
@@ -92,7 +95,10 @@ def download_orig_captions(url: str, project_dir: str = ".", force: bool = False
             'postprocessors': [{
                 'key': 'FFmpegSubtitlesConvertor',
                 'format': 'srt'
-            }]
+            }],
+            'socket_timeout': 10,
+            'retries': 1,
+            'nocheckcertificate': True
         }
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
@@ -135,7 +141,10 @@ def download_zh_captions(url: str, project_dir: str = ".", force: bool = False):
             'postprocessors': [{
                 'key': 'FFmpegSubtitlesConvertor',
                 'format': 'srt'
-            }]
+            }],
+            'socket_timeout': 10,
+            'retries': 1,
+            'nocheckcertificate': True
         }
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
